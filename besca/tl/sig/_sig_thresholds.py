@@ -1,6 +1,6 @@
 import pandas as pd
 
-def generate_annot_threshold(myc, fileName='sig_threshold.csv'):
+def generate_annot_threshold(myc, filename='sig_threshold.csv'):
     """ Generate a config files for autoannotation of the clusters.
     This file will be used afterwards by the sig modules.
     Modifying the thresholds is then possible on the text file
@@ -27,8 +27,8 @@ def generate_annot_threshold(myc, fileName='sig_threshold.csv'):
                 'Mo14', 'Mo16', 'TAMCx', 'TMid',
                 'MyeloSubtype', 'Granulo',  'Neutrophil', 'Macrophage',
                 'Cellcycle'  , 'Checkpoint', 'Ifng',
-                'Endo', 'Cafs',  'MelMelan', 'Megakaryocytes'
-                ])
+                'Endo', 'Cafs',  'MelMelan', 'Megakaryocytes'])
+
     threshold = pd.Series([1, 1, 1, 1/2, 2/3,
                  1, 2, 2, 3/2,
                  2, 2, 1, 1, 3/2, 4/3, 2, 1,#Nknai
@@ -37,9 +37,8 @@ def generate_annot_threshold(myc, fileName='sig_threshold.csv'):
                  1, 1, 1, 2,# Moma
                  1, 1, 1, 1,# Macrophage
                  4/3, 1, 1,#Ifng
-                 1, 1, 1, 1# Megakaryocytes
-                ])
+                 1, 1, 1, 1])# Megakaryocytes
     threshold = pd.Series([x * myc for x in threshold])
     finalTh = pd.concat([cellName, threshold] , axis = 1)
-    finalTh.to_csv(fileName)
+    finalTh.to_csv(filename)
 
