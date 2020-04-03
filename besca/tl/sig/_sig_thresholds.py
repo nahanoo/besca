@@ -38,7 +38,6 @@ def generate_annot_threshold(myc, filename='sig_threshold.csv'):
                  1, 1, 1, 1,# Macrophage
                  4/3, 1, 1,#Ifng
                  1, 1, 1, 1])# Megakaryocytes
-    threshold = pd.Series([x * myc for x in threshold])
-    finalTh = pd.concat([cellName, threshold] , axis = 1)
-    finalTh.to_csv(filename)
+    threshold = pd.Series([x * myc for x in threshold], index = cellName)
+    threshold.to_csv(filename)
 
