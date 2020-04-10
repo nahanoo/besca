@@ -13,8 +13,12 @@ def generate_annot_threshold(myc, filename='sig_threshold.csv'):
       where this will be saved.
     returns
     -------
-    list of str
-        String of cluster labels
+     None
+    Example
+    -------
+    >>> import besca as bc 
+    >>> bc.tl.sig.generate_annot_threshold(3)
+
     """
     cellName = pd.Series(['Bcells', 'Plasma', 'Tcd8', 'Tcd4',
                 'Tcgd', 'Treg', 'TNK', 'TilCM', 'T4CM',
@@ -40,4 +44,35 @@ def generate_annot_threshold(myc, filename='sig_threshold.csv'):
                  1, 1, 1, 1])# Megakaryocytes
     threshold = pd.Series([x * myc for x in threshold], index = cellName)
     threshold.to_csv(filename)
+
+
+def get_threshold(filethreshold='sig_threshold.csv'):
+    """ Read a threshold file,csv, and return a dictionary.
+    Initial column contains keys an second a value.
+    If not present default_value key will be added 
+    ----------
+    myc: 'numpy.float64'
+      threshold used for cluster attribution
+    fileName: 'str'
+      where this will be saved.
+    returns
+    -------
+    a dict. 
+        Key: first columns of the csv file
+        Value: Dictionnary : {'0' : value}
+            where the value is the second column of the csv file
+    Example
+    -------
+    >>> import besca as bc 
+    >>> bc.tl.sig.generate_annot_threshold(3, filename='test.csv')
+    >>> thresholdDict = bc.tl.sig.get_threshold('test.csv')
+    """
+    df = pd.read_csv(filethreshold, index_col=0)
+    myc_dict = df.to_dict(orient='index')
+    if(not 'default_value' in myc_dict.keys()):
+        maxI = max(df['0'])
+        myc_dict['default_value'] = {'0': maxI}
+    return(myc_dict)
+
+
 

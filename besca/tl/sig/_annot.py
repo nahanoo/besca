@@ -30,6 +30,7 @@ def getset(df, signame, Cell, thresholdTable):
         if(Cell in thresholdTable.keys()):
             return(set(df.columns[df.loc[signame_complete, :] > thresholdTable[Cell]['0']]))
         else:
+            # Should we add verbosity
             return(set(df.columns[df.loc[signame_complete, :] > thresholdTable['default_value']['0']]))
     else:
         return(set())
@@ -77,7 +78,7 @@ def score_mw(f, mymarkers):
     for key, value in mymarkers.items():
         for i in ids:
             mypFrame.loc[key,i] = -10*log(mannwhitneyu(x=f.loc[f['Description'].isin(value),:][i], 
-                     y=f[i],alternative='greater').pvalue)
+                    y=f[i], alternative='greater').pvalue)
     return(mypFrame)
 
 
@@ -121,10 +122,8 @@ def add_anno(adata,cNames, cluster='louvain'):
     return(adata)
 
 
-
-
-
-def make_anno(mypFrame, signame, f, CD45threshold=0.3,species='human', filethreshold = 'sig_threshold.csv'):
+def make_anno(mypFrame, signame, f, thresholdDict,
+              CD45threshold=0.3, species='human'):
     """ Annotate Immune cells and some other cell types (melanoma, endothelial)
     Based on a dataframe of -log10pvals, a cutoff and a signature set generate cell annotation
     Hierarchical model of Immune cell annotation.
@@ -138,73 +137,74 @@ def make_anno(mypFrame, signame, f, CD45threshold=0.3,species='human', filethres
       a dataframe with fraction genes expressed per cluster
     signame: 'str'
       signature base name; should be prefix of multiples columns in mypFrame
-    fileThreshold: 'str'
-    file containing the thresholds. expected: csv files with 1 column named Threshold and indexed by cell type.
-    See function sig_thresholds
+    thresholdDict: 'dict'
+      dictionary containing the thresholds. expected: key: cell name 
+      value: threshold.   See function generate_annot_threshold and get_threshold
+    CD45threshold: 'float'
+      threshold for CD45 percent. Cluster with higher percent of cell expressing of CD45 (PTPRC/Ptprc) 
+      will be assigned as possible immune cell.
+
     returns
     -------
     list of str
         String of cluster labels
     """
-
-    df = read_csv(filethreshold, index_col=0)
-    myc_dict = df.to_dict(orient='index')
-    if(not 'default_value' in myc_dict.keys()):
+    if(not 'default_value' in thresholdDict.keys()):
         maxI = max(df['0'])
-        myc_dict['default_value'] = {'0': maxI}
+        thresholdDict['default_value'] = {'0': maxI}
     ## over CD45threshold % of cells have CD45
     aCD45P = set(where(gene_fr(f, ['PTPRC']) >= CD45threshold)[0])
     if species == 'mouse':
         aCD45P = set(where(gene_fr(f, ['Ptprc']) >= CD45threshold)[0])
-    aBcells = getset(mypFrame, signame, 'Bcells', myc_dict)
-    aPlasma = getset(mypFrame, signame,'Plasma', myc_dict)
-    aTcd8 = getset(mypFrame, signame, 'Tcd8', myc_dict)
-    aTcd4 = getset(mypFrame, signame, 'Tcd4', myc_dict)
-    aTcgd = getset(mypFrame, signame, 'Tcgd', myc_dict)
-    aTreg = getset(mypFrame, signame, 'Treg', myc_dict)
-    aTNK = getset(mypFrame, signame, 'TNK', myc_dict)
-    aTilCM = getset(mypFrame, signame, 'TilCM', myc_dict)
-    aT4CM = getset(mypFrame, signame, 'T4CM', myc_dict)
-    aTcytox = getset(mypFrame, signame, 'Tcytox', myc_dict)
-    aTEM = getset(mypFrame, signame, 'TEM', myc_dict)
-    aTtexh = getset(mypFrame, signame, 'Ttexh', myc_dict)
-    aTpexh = getset(mypFrame, signame, 'Tpexh', myc_dict)
-    aNKT = getset(mypFrame, signame, 'NKT', myc_dict)
-    aTcells = getset(mypFrame, signame, 'Tcells' ,myc_dict)
-    aNKcells = getset(mypFrame, signame, 'NKcells', myc_dict)
-    aNKnai = getset(mypFrame, signame, 'NKnai', myc_dict)
-    aNKcyt = getset(mypFrame, signame, 'NKcyt', myc_dict)
-    aMyelo = getset(mypFrame, signame, 'Myelo', myc_dict)
-    aNai = getset(mypFrame, signame, 'Naive', myc_dict)
-    aAct = getset(mypFrame, signame, 'Activation', myc_dict)
-    aMem = getset(mypFrame, signame, 'Memory', myc_dict)
-    aEff = getset(mypFrame, signame, 'Eff', myc_dict)
-    aNonEff = getset(mypFrame, signame, 'NonEff',myc_dict)
-    aCytotox = getset(mypFrame, signame, 'Cytotox',myc_dict)
-    aDCs = getset(mypFrame, signame, 'aDCs', myc_dict)
-    moDC = getset(mypFrame, signame, 'moDC', myc_dict)
-    pDCs = getset(mypFrame, signame, 'pDCs', myc_dict)
-    acDC1 = getset(mypFrame, signame, 'cDC1', myc_dict)    
-    acDC2 = getset(mypFrame, signame, 'cDC2', myc_dict)   
-    aMono = getset(mypFrame, signame, 'Monocytes', myc_dict)
-    aTAM = getset(mypFrame, signame, 'TAM', myc_dict)
-    aTMO = getset(mypFrame, signame, 'TMO', myc_dict)
-    aMo14 = getset(mypFrame, signame, 'Mo14', myc_dict)
-    aMo16 = getset(mypFrame, signame, 'Mo16', myc_dict)
-    aTAMCx = getset(mypFrame, signame, 'TAMCx', myc_dict)
-    aTMid = getset(mypFrame, signame, 'TMid', myc_dict)
-    aMoMa = getset(mypFrame, signame, 'MoMa', myc_dict)
-    aMyeloSubtype = getset(mypFrame, signame, 'MyeloSubtype', myc_dict)
-    aGranu = getset(mypFrame, signame, 'Granulo', myc_dict)
-    aNeutro = getset(mypFrame, signame, 'Neutrophil', myc_dict)
-    aMacrophage = getset(mypFrame, signame, 'Macrophage', myc_dict)
-    aCC = getset(mypFrame, signame, 'Cellcycle', myc_dict)
-    aCh = getset(mypFrame, signame, 'Checkpoint', myc_dict)
-    aIfng = getset(mypFrame, signame, 'Ifng', myc_dict)
-    aEndo = getset(mypFrame, signame, 'Endo', myc_dict)
-    aCafs = getset(mypFrame, signame, 'Cafs', myc_dict)
-    aMelMelan = getset(mypFrame, signame, 'MelMelan', myc_dict)
-    aMega = getset(mypFrame, signame, 'Megakaryocytes', myc_dict)
+    aBcells = getset(mypFrame, signame, 'Bcells', thresholdDict)
+    aPlasma = getset(mypFrame, signame,'Plasma', thresholdDict)
+    aTcd8 = getset(mypFrame, signame, 'Tcd8', thresholdDict)
+    aTcd4 = getset(mypFrame, signame, 'Tcd4', thresholdDict)
+    aTcgd = getset(mypFrame, signame, 'Tcgd', thresholdDict)
+    aTreg = getset(mypFrame, signame, 'Treg', thresholdDict)
+    aTNK = getset(mypFrame, signame, 'TNK', thresholdDict)
+    aTilCM = getset(mypFrame, signame, 'TilCM', thresholdDict)
+    aT4CM = getset(mypFrame, signame, 'T4CM', thresholdDict)
+    aTcytox = getset(mypFrame, signame, 'Tcytox', thresholdDict)
+    aTEM = getset(mypFrame, signame, 'TEM', thresholdDict)
+    aTtexh = getset(mypFrame, signame, 'Ttexh', thresholdDict)
+    aTpexh = getset(mypFrame, signame, 'Tpexh', thresholdDict)
+    aNKT = getset(mypFrame, signame, 'NKT', thresholdDict)
+    aTcells = getset(mypFrame, signame, 'Tcells' ,thresholdDict)
+    aNKcells = getset(mypFrame, signame, 'NKcells', thresholdDict)
+    aNKnai = getset(mypFrame, signame, 'NKnai', thresholdDict)
+    aNKcyt = getset(mypFrame, signame, 'NKcyt', thresholdDict)
+    aMyelo = getset(mypFrame, signame, 'Myelo', thresholdDict)
+    aNai = getset(mypFrame, signame, 'Naive', thresholdDict)
+    aAct = getset(mypFrame, signame, 'Activation', thresholdDict)
+    aMem = getset(mypFrame, signame, 'Memory', thresholdDict)
+    aEff = getset(mypFrame, signame, 'Eff', thresholdDict)
+    aNonEff = getset(mypFrame, signame, 'NonEff',thresholdDict)
+    aCytotox = getset(mypFrame, signame, 'Cytotox',thresholdDict)
+    aDCs = getset(mypFrame, signame, 'aDCs', thresholdDict)
+    moDC = getset(mypFrame, signame, 'moDC', thresholdDict)
+    pDCs = getset(mypFrame, signame, 'pDCs', thresholdDict)
+    acDC1 = getset(mypFrame, signame, 'cDC1', thresholdDict)    
+    acDC2 = getset(mypFrame, signame, 'cDC2', thresholdDict)   
+    aMono = getset(mypFrame, signame, 'Monocytes', thresholdDict)
+    aTAM = getset(mypFrame, signame, 'TAM', thresholdDict)
+    aTMO = getset(mypFrame, signame, 'TMO', thresholdDict)
+    aMo14 = getset(mypFrame, signame, 'Mo14', thresholdDict)
+    aMo16 = getset(mypFrame, signame, 'Mo16', thresholdDict)
+    aTAMCx = getset(mypFrame, signame, 'TAMCx', thresholdDict)
+    aTMid = getset(mypFrame, signame, 'TMid', thresholdDict)
+    aMoMa = getset(mypFrame, signame, 'MoMa', thresholdDict)
+    aMyeloSubtype = getset(mypFrame, signame, 'MyeloSubtype', thresholdDict)
+    aGranu = getset(mypFrame, signame, 'Granulo', thresholdDict)
+    aNeutro = getset(mypFrame, signame, 'Neutrophil', thresholdDict)
+    aMacrophage = getset(mypFrame, signame, 'Macrophage', thresholdDict)
+    aCC = getset(mypFrame, signame, 'Cellcycle', thresholdDict)
+    aCh = getset(mypFrame, signame, 'Checkpoint', thresholdDict)
+    aIfng = getset(mypFrame, signame, 'Ifng', thresholdDict)
+    aEndo = getset(mypFrame, signame, 'Endo', thresholdDict)
+    aCafs = getset(mypFrame, signame, 'Cafs', thresholdDict)
+    aMelMelan = getset(mypFrame, signame, 'MelMelan', thresholdDict)
+    aMega = getset(mypFrame, signame, 'Megakaryocytes', thresholdDict)
    #### Part 2 Combine
     CD45P = set(aCD45P).union(set(aBcells).union(aNKcells).union(aTNK).union(aTcells).union(aTreg).union(aMyelo).union(pDCs))
     Tc = set(CD45P).intersection(set(aTcells).union(aTreg)-set(aBcells)-set(aMyelo))
